@@ -57,7 +57,6 @@ async function autowrite() {
         }
         if (trimmedLine.startsWith('#')) {
             const nr = +trimmedLine.substring(1, trimmedLine.indexOf('|'));
-            console.log('NR', nr);
             const tabs = line.substring(0, line.indexOf('#'));
             const code = line.substring(line.indexOf('|')+1);
             const newBlock: Line = {
