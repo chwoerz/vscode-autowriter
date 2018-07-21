@@ -3,6 +3,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -16,9 +17,24 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
     let disposable = vscode.commands.registerCommand('extension.autowrite', () => {
+        const fileUri = vscode.window.activeTextEditor.document.fileName;
+        console.log(fileUri);
+        const fileNameIdx = fileUri.lastIndexOf('/') + 1;
+        console.log(fileNameIdx);
+        const pathOfFile = fileUri.substring(0, fileNameIdx);
+        const fileName = fileUri.substring(fileNameIdx, fileUri.length);
+        console.log(pathOfFile);
         // The code you place here will be executed every time your command is executed
+        const filePath = path.join(pathOfFile, 'tt.' + fileName);
+        fs.writeFileSync(filePath, '', 'utf8');
 
-        autowrite();
+        var openPath = vscode.Uri.file(filePath);
+        vscode.workspace.openTextDocument(openPath).then(doc => {
+            vscode.window.showTextDocument(doc).then(_ => {
+                autowrite(fileUri);
+
+            });
+        }, (err) => console.log('ERR', err));
     });
     context.subscriptions.push(disposable);
 }
@@ -31,16 +47,18 @@ interface Line {
     finalPos: number;
     writePos: number;
     txt: string;
+    isComment: boolean;
     waitSecsAfter: number;
 }
 
 interface WrapperEntry {
-    [writePos: number] : Array<Line>;
+    [writePos: number]: Array<Line>;
 }
 
-async function autowrite() {
+async function autowrite(path: string) {
+    console.log('drin', path);
     const lb = '\n';
-    let txt = fs.readFileSync('/Users/christian/projects/writer-extension/autowriter/src/Array.from.js', 'utf8');
+    let txt = fs.readFileSync(path, 'utf8');
     let lastBlockNr = 0;
 
     const wrapper = txt.replace(/    /g, '\t').split('\n').map((line, idx) => {
@@ -48,7 +66,7 @@ async function autowrite() {
         let waitSecsAfter = 0;
         const waitStart = '|&ws=';
         const waitEnd = '&we|';
-        if(trimmedLine.includes(waitStart)) {
+        if (trimmedLine.includes(waitStart)) {
             const waitPart = trimmedLine.indexOf(waitStart);
             const startIndex = waitPart + waitStart.length;
             const endIndex = trimmedLine.indexOf(waitEnd);
@@ -58,11 +76,12 @@ async function autowrite() {
         if (trimmedLine.startsWith('#')) {
             const nr = +trimmedLine.substring(1, trimmedLine.indexOf('|'));
             const tabs = line.substring(0, line.indexOf('#'));
-            const code = line.substring(line.indexOf('|')+1);
+            const code = line.substring(line.indexOf('|') + 1);
             const newBlock: Line = {
                 finalPos: idx,
                 writePos: nr,
                 txt: tabs + code,
+                isComment: trimmedLine.includes('//'),
                 waitSecsAfter
             };
             lastBlockNr = nr;
@@ -72,11 +91,12 @@ async function autowrite() {
                 finalPos: idx,
                 writePos: lastBlockNr,
                 txt: line,
+                isComment: trimmedLine.includes('//'),
                 waitSecsAfter
             };
             return newEntryInBlock;
         }
-    }).reduce((acc: WrapperEntry, cur:Line) => {
+    }).reduce((acc: WrapperEntry, cur: Line) => {
         if (acc[cur.writePos]) {
             acc[cur.writePos].push(cur);
             return acc;
@@ -117,20 +137,20 @@ async function autowrite() {
             await editor.edit(editBuilder => {
                 editBuilder.insert(position, lb);
             });
-            await enterCharsOnLine(lineBefore+1, entry);
+            await enterCharsOnLine(lineBefore + 1, entry);
         };
 
         const enterCharsOnLine = async (line: number, entry: Line) => {
             const strArr = [...entry.txt];
             for (let i = 0; i < strArr.length; i++) {
                 const enterPosition = new vscode.Position(line, i);
-                const newPosition = new vscode.Position(line, i+1);
+                const newPosition = new vscode.Position(line, i + 1);
                 const char = strArr[i];
                 await editor.edit(editBuilder => {
                     editBuilder.insert(enterPosition, char);
                 });
                 editor.selection = new vscode.Selection(newPosition, newPosition);
-                await sleep(60);
+                await sleep(40);
             }
             await sleep(entry.waitSecsAfter * 1000);
         };
