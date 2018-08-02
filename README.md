@@ -29,7 +29,7 @@ This added to the code will look like that:
     #1|aMethod() {
         const aLine = 'hello';
         const anotherLine = 'again';
-    }
+    }//Here will be waited 2 seconds|&ws=2&we|
 
     #0|// this method will be written first
     anotherMethod() {
