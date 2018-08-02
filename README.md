@@ -1,4 +1,4 @@
-# Autowriting possibility for VSCode
+# Autowriting possibility for VSCode (Work in progress
 
 ## Tl;dr
 I've wanted to create a "smooth" programming presentation using VSCode. But because I've made to many mistakes while typing, I've decided to create an extension to write the code automatically.
