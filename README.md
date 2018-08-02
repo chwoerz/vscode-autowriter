@@ -17,6 +17,7 @@ class Example {
         console.log('first');
     }
 }
+```
 
 2. Add the autowriter markers. The following are available until now:
    - `#x|` : You are able set a sequence in which order the code will be written. 
